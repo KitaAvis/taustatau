@@ -703,17 +703,11 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     raycaster.setFromCamera(pointer,camera);
     var visible=planes.filter(function(m){return m&&m.visible&&m.material.opacity>0.5;});
     var hits=raycaster.intersectObjects(visible);
-    var found=null;
-    var rd=raycaster.ray.direction;
-    for(var hi=0;hi<hits.length;hi++){
-      var h=hits[hi];
-      if(h.distance>SPACING*2.5)break;
-      // tik plokštumos kurios atgalinė pusė žiuri į kamerą (DoubleSide: lookAt pasuaka priekinę nuo kameros)
-      var wn=h.face.normal.clone().transformDirection(h.object.matrixWorld);
-      if(rd.dot(wn)>0){found=h.object;break;}
+    if(hits.length&&hits[0].distance<SPACING*2.5){
+      openLightbox(hits[0].object.userData.idx);
+    }else if(activated){
+      setActivated(false);
     }
-    if(found){openLightbox(found.userData.idx);}
-    else if(activated){setActivated(false);}
   }
   // desktop: pele
   canvas.addEventListener('pointerdown',function(e){downX=e.clientX;downY=e.clientY;});
