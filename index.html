@@ -149,8 +149,7 @@
   .contact__cta-side .btn{font-size:1rem;padding:1.3rem 3rem}
   .contact__btn{margin-top:0}
   .contact__portrait{width:100%;border-radius:4px;overflow:hidden;margin-bottom:2rem}
-  .contact__portrait img{width:100%;height:420px;object-fit:cover;object-position:center top;display:block}
-  @media(max-width:760px){.contact__portrait img{height:280px}}
+  .contact__portrait img{width:100%;height:auto;display:block}
 
   footer{padding:3rem 0;border-top:1px solid var(--line)}
   .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;color:var(--muted);font-size:.84rem}
@@ -167,7 +166,7 @@
   .gtext h2 em{font-style:italic;color:var(--yellow)}
   .gcount{position:absolute;top:2rem;right:2rem;z-index:6;font-family:var(--f-display);font-size:clamp(1.6rem,4vw,2.8rem);color:rgba(245,197,24,.4)}
   .gcount b{color:var(--yellow)}
-  .glabel{position:absolute;left:2rem;bottom:2rem;z-index:6;transition:opacity .4s}
+  .glabel{position:absolute;left:2rem;bottom:2rem;z-index:6;transition:opacity .4s;opacity:0}
   .glabel span{display:block;color:var(--yellow);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
   .glabel b{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;font-weight:400}
   .ghint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);z-index:6;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
@@ -532,8 +531,8 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
   var camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,0.1,100);
 
   var N=ARNO.length;
-  var REPEAT=3;                  // kartoju nuotraukas, kad tunelis butu ilgas ir pilnas
-  var TOTAL=N*REPEAT;
+  var REPEAT=1;
+  var TOTAL=N;
   var SPACING=6.5;             // didesnis atstumas - nuotraukos neuzeina viena ant kitos
   var TUNNEL_R=3.0;           // tunelio spindulys
   var planes=[];
@@ -580,16 +579,42 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
   function setActivated(on){
     activated=on;
     if(on){
-      pinWrap.style.height='900vh';
+      var st=pinWrap.getBoundingClientRect().top+window.scrollY;
+      window.scrollTo(0,st);
+      document.documentElement.style.overflow='hidden';
+      document.body.style.overflow='hidden';
+      targetZ=0;curZ=0;
       if(actEl)actEl.classList.add('hidden');
     }else{
-      pinWrap.style.height='100vh';
+      document.documentElement.style.overflow='';
+      document.body.style.overflow='';
       if(actEl)actEl.classList.remove('hidden');
     }
   }
   // pradzioje NEAKTYVUOTA - galerija uzima tik viena ekrana, praslenki pro ja
   setActivated(false);
   if(actEl)actEl.addEventListener('click',function(){setActivated(true);});
+  if(doneEl)doneEl.addEventListener('click',function(){setActivated(false);});
+
+  var MAX_Z=(N-1)*SPACING;
+  var touchLastY=0;
+  window.addEventListener('wheel',function(e){
+    if(!activated)return;
+    e.preventDefault();
+    targetZ+=e.deltaY*0.06;
+    targetZ=Math.max(0,Math.min(targetZ,MAX_Z));
+  },{passive:false});
+  window.addEventListener('touchstart',function(e){
+    touchLastY=e.touches[0].clientY;
+  },{passive:true});
+  window.addEventListener('touchmove',function(e){
+    if(!activated)return;
+    e.preventDefault();
+    var dy=touchLastY-e.touches[0].clientY;
+    touchLastY=e.touches[0].clientY;
+    targetZ+=dy*0.12;
+    targetZ=Math.max(0,Math.min(targetZ,MAX_Z));
+  },{passive:false});
 
   addEventListener('scroll',function(){idleT=0;},{passive:true});
   addEventListener('mousemove',function(e){mouseX=(e.clientX/innerWidth-0.5);mouseY=(e.clientY/innerHeight-0.5);});
@@ -649,11 +674,8 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
     requestAnimationFrame(animate);
     if(isOpen){renderer.render(scene,camera);return;}  // lightbox - erdve sustabdyta
 
-    var p=pinProgress();
-    // tikslinis kelias per visa tuneli (sklandus, be snap)
-    var travel=p*((TOTAL-1)*SPACING);
-    // INERCIJA: sviestinis priartejimas (sklandu telefone ir kompiuteryje)
-    curZ+=(travel-curZ)*0.075;
+    // INERCIJA: targetZ valdo wheel/touch, curZ seka su inercija
+    curZ+=(targetZ-curZ)*0.075;
 
     // TUNELIS: nuotraukos aplink asi, atsuktos i centra, slenka pro kamera
     for(var i=0;i<planes.length;i++){
@@ -669,7 +691,7 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
       // AISKIAI matomos visa kelia; tik tik pro kamera prabegancios svelniai isnyksta
       var op=1;
       if(z>2)op=clamp((5-z)/3);          // ka tik prabego pro kamera
-      else if(z<-(TOTAL*SPACING-SPACING*2))op=0; // tunelio gale
+
       m.material.opacity=op;
       m.visible=op>0.01 && z<5;
     }
@@ -678,9 +700,16 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
     var best=0,bd=999;
     for(var j=0;j<planes.length;j++){var m2=planes[j];if(!m2||!m2.visible)continue;var d=Math.abs(m2.userData.z0+curZ);if(d<bd){bd=d;best=m2.userData.srcIdx;}}
     var gcurEl=document.getElementById('gcur');if(gcurEl)gcurEl.textContent=('0'+(best+1)).slice(-2);
-    if(ARNO_CAP&&ARNO_CAP[best]){
-      document.getElementById('glab-cat').textContent=ARNO_CAP[best][0];
-      document.getElementById('glab-name').textContent=ARNO_CAP[best][1];
+    if(doneEl){if(targetZ>MAX_Z*0.95)doneEl.classList.add('show');else doneEl.classList.remove('show');}
+    var glabelEl=document.querySelector('.glabel');
+    if(bd<SPACING*0.45){
+      if(glabelEl)glabelEl.style.opacity='1';
+      if(ARNO_CAP&&ARNO_CAP[best]){
+        document.getElementById('glab-cat').textContent=ARNO_CAP[best][0];
+        document.getElementById('glab-name').textContent=ARNO_CAP[best][1];
+      }
+    }else{
+      if(glabelEl)glabelEl.style.opacity='0';
     }
 
     // PELE - svelnus parallax (ziuri is skirtingu kampu, bet lieki tunelyje)
