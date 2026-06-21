@@ -600,7 +600,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   if(doneEl)doneEl.addEventListener('click',function(){setActivated(false);});
 
   var MAX_Z=(N-1)*SPACING;
-  var touchLastY=0;
+  var touchLastY=0,tHasMoved=false;
   window.addEventListener('wheel',function(e){
     if(!activated)return;
     e.preventDefault();
@@ -610,12 +610,14 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   window.addEventListener('touchstart',function(e){
     touchLastY=e.touches[0].clientY;
     tStartX=e.touches[0].clientX;tStartY=e.touches[0].clientY;
+    tHasMoved=false;
   },{passive:true});
   window.addEventListener('touchmove',function(e){
     if(!activated)return;
     e.preventDefault();
     var dy=touchLastY-e.touches[0].clientY;
     touchLastY=e.touches[0].clientY;
+    if(Math.abs(dy)>5)tHasMoved=true;
     targetZ+=dy*0.12;
     targetZ=Math.max(0,Math.min(targetZ,MAX_Z));
   },{passive:false});
@@ -706,9 +708,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var tStartX=0,tStartY=0;
   window.addEventListener('touchend',function(e){
     if(!activated||isOpen)return;
-    var dx=Math.abs(e.changedTouches[0].clientX-tStartX);
-    var dy=Math.abs(e.changedTouches[0].clientY-tStartY);
-    if(dx<15&&dy<15)pickAt(tStartX,tStartY);
+    if(!tHasMoved)pickAt(tStartX,tStartY);
   },{passive:true});
 
   function animate(){
