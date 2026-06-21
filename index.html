@@ -609,6 +609,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   },{passive:false});
   window.addEventListener('touchstart',function(e){
     touchLastY=e.touches[0].clientY;
+    tStartX=e.touches[0].clientX;tStartY=e.touches[0].clientY;
   },{passive:true});
   window.addEventListener('touchmove',function(e){
     if(!activated)return;
@@ -687,12 +688,11 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     pointer.x=(clientX/innerWidth)*2-1;
     pointer.y=-(clientY/innerHeight)*2+1;
     raycaster.setFromCamera(pointer,camera);
-    var hits=raycaster.intersectObjects(planes.filter(function(m){return m&&m.visible&&m.material.opacity>0.1;}));
-    if(hits.length){
-      var m=hits[0].object;
-      openLightbox(m.userData.idx);          // ant nuotraukos - atidaro
+    var hits=raycaster.intersectObjects(planes.filter(function(m){return m&&m.visible&&m.material.opacity>0.5;}));
+    if(hits.length&&hits[0].distance<SPACING*2.5){
+      openLightbox(hits[0].object.userData.idx);
     }else if(activated){
-      setActivated(false);                    // salia nuotraukos - iseini is galerijos
+      setActivated(false);
     }
   }
   // pele: atskiriu paspaudima nuo skrolinimo/tempimo
@@ -702,13 +702,10 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     var dist=Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY);
     if(dist<8)pickAt(e.clientX,e.clientY);
   });
-  // touch: pointerup neveikia mobiliam kai touchmove preventDefault aktyvus
+  // touch: window lygyje - veikia nepriklausomai nuo overlay elementu
   var tStartX=0,tStartY=0;
-  canvas.addEventListener('touchstart',function(e){
-    tStartX=e.touches[0].clientX;tStartY=e.touches[0].clientY;
-  },{passive:true});
-  canvas.addEventListener('touchend',function(e){
-    if(isOpen)return;
+  window.addEventListener('touchend',function(e){
+    if(!activated||isOpen)return;
     var dx=Math.abs(e.changedTouches[0].clientX-tStartX);
     var dy=Math.abs(e.changedTouches[0].clientY-tStartY);
     if(dx<15&&dy<15)pickAt(tStartX,tStartY);
