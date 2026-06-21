@@ -170,10 +170,6 @@
   .glabel span{display:block;color:var(--yellow);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
   .glabel b{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;font-weight:400}
   .ghint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);z-index:6;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
-  .g-neon-frame{position:absolute;pointer-events:none;z-index:7;opacity:0;transition:opacity .5s;border-radius:2px;overflow:hidden;padding:4px;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
-  .g-neon-frame::before{content:'';position:absolute;inset:-100%;background:conic-gradient(from 0deg,#ff0080,#ff8c00,#ffed00,#00ff72,#00c8ff,#bf00ff,#ff0080);animation:gneon-spin 2.5s linear infinite}
-  .g-neon-frame.show{opacity:1}
-  @keyframes gneon-spin{100%{transform:rotate(360deg)}}
   .gload{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:var(--black);transition:opacity .6s}
   .gload.gone{opacity:0;pointer-events:none}
   .gload span{font-family:var(--f-display);font-size:1.4rem;color:var(--yellow);letter-spacing:.1em}
@@ -182,9 +178,9 @@
   .lightbox.open{opacity:1;visibility:visible}
   .lightbox img{max-width:90vw;max-height:80vh;width:auto;height:auto;border-radius:6px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9);transform:scale(.92);transition:transform .5s cubic-bezier(.22,1,.36,1)}
   .lightbox.open img{transform:scale(1)}
-  .lightbox__cap{margin-top:1.5rem;text-align:center}
-  .lightbox__cap span{display:block;color:#fff;font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
-  .lightbox__cap b{font-family:var(--f-display);font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#fff}
+  .lightbox__cap{margin-top:1.2rem;text-align:center}
+  .lightbox__cap span{display:none}
+  .lightbox__cap b{display:block;font-family:var(--f-display);font-size:clamp(1.1rem,2.5vw,1.6rem);text-transform:uppercase;font-weight:400;color:#fff;letter-spacing:.06em;line-height:1.2;text-align:center}
   .lightbox__close{position:absolute;top:1.5rem;right:1.5rem;width:44px;height:44px;border:1px solid rgba(245,245,242,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:1.4rem;cursor:pointer;transition:background .3s,color .3s}
   .lightbox__close:hover{background:var(--yellow);color:var(--black)}
   .gallery.has-open{cursor:default}
@@ -323,7 +319,6 @@
     <div class="gactivate__btn">▶ Atidaryti galeriją</div>
   </div>
   <div class="gdone" id="gdone">Slinkite žemyn — toliau ↓</div>
-  <div class="g-neon-frame" id="gneon"></div>
   <div class="gload" id="gload"><span>Kraunama galerija…</span></div>
 </div>
 </div>
