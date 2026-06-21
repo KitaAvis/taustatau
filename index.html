@@ -176,7 +176,7 @@
   /* LIGHTBOX - nuotrauka atsidaro pilnai */
   .lightbox{position:fixed;inset:0;z-index:50;background:rgba(6,6,6,.94);display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;visibility:hidden;transition:opacity .5s,visibility .5s;cursor:zoom-out;padding:4vh 4vw}
   .lightbox.open{opacity:1;visibility:visible}
-  .lightbox img{max-width:90vw;max-height:80vh;width:auto;height:auto;border-radius:6px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9);transform:scale(.92);transition:transform .5s cubic-bezier(.22,1,.36,1)}
+  .lightbox img{max-width:90vw;max-height:80vh;width:auto;height:auto;border-radius:6px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9);transform:scale(.92);transition:transform .5s cubic-bezier(.22,1,.36,1);transform-origin:center center;cursor:zoom-in;touch-action:none}
   .lightbox.open img{transform:scale(1)}
   .lightbox__cap{margin-top:1.2rem;text-align:center}
   .lightbox__cap span{display:none}
@@ -303,7 +303,7 @@
     </div>
   </section>
 
-  <section class="sec" style="padding-bottom:0">
+  <section class="sec" style="padding-bottom:2.5rem">
     <div class="wrap">
       <span class="lbl anim">Galerija</span>
       <h2 class="h2 anim d1">Atlikti <span class="y">darbai</span></h2>
@@ -648,7 +648,36 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     }
     lightbox.classList.add('open');isOpen=true;
   }
-  function closeLightbox(){lightbox.classList.remove('open');isOpen=false;}
+  var lbZoom=1,lbPinchD0=0,lbPinchZ0=1;
+  function lbSetZoom(z){
+    lbZoom=Math.min(Math.max(z,1),4);
+    var lbI=document.getElementById('lbimg');
+    if(lbI)lbI.style.transform='scale('+lbZoom+')';
+  }
+  function closeLightbox(){
+    lightbox.classList.remove('open');isOpen=false;lbSetZoom(1);
+  }
+  // Scroll to zoom (desktop)
+  lightbox.addEventListener('wheel',function(e){
+    if(!isOpen)return;
+    e.preventDefault();
+    lbSetZoom(lbZoom-e.deltaY*0.003);
+  },{passive:false});
+  // Pinch to zoom (mobile)
+  lightbox.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){
+      lbPinchD0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      lbPinchZ0=lbZoom;
+      e.preventDefault();
+    }
+  },{passive:false});
+  lightbox.addEventListener('touchmove',function(e){
+    if(e.touches.length===2){
+      var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      lbSetZoom(lbPinchZ0*(d/lbPinchD0));
+      e.preventDefault();
+    }
+  },{passive:false});
   lightbox.addEventListener('click',closeLightbox);
   document.getElementById('lbclose').addEventListener('click',function(e){e.stopPropagation();closeLightbox();});
   addEventListener('keydown',function(e){if(e.key==='Escape'&&isOpen)closeLightbox();});
@@ -657,7 +686,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     pointer.x=(clientX/innerWidth)*2-1;
     pointer.y=-(clientY/innerHeight)*2+1;
     raycaster.setFromCamera(pointer,camera);
-    var hits=raycaster.intersectObjects(planes.filter(function(m){return m&&m.visible&&m.material.opacity>0.1;}));
+    var hits=raycaster.intersectObjects(planes.filter(function(m){if(!m||!m.visible)return false;var mz=m.userData.z0+curZ;return mz>-SPACING*0.6&&mz<SPACING*0.4;}));
     if(hits.length){
       var m=hits[0].object;
       openLightbox(m.userData.idx);          // ant nuotraukos - atidaro
