@@ -170,6 +170,10 @@
   .glabel span{display:block;color:var(--yellow);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
   .glabel b{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;font-weight:400}
   .ghint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);z-index:6;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+  .g-neon-frame{position:absolute;pointer-events:none;z-index:7;opacity:0;transition:opacity .5s;border-radius:2px;overflow:hidden;padding:4px;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+  .g-neon-frame::before{content:'';position:absolute;inset:-100%;background:conic-gradient(from 0deg,#ff0080,#ff8c00,#ffed00,#00ff72,#00c8ff,#bf00ff,#ff0080);animation:gneon-spin 2.5s linear infinite}
+  .g-neon-frame.show{opacity:1}
+  @keyframes gneon-spin{100%{transform:rotate(360deg)}}
   .gload{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:var(--black);transition:opacity .6s}
   .gload.gone{opacity:0;pointer-events:none}
   .gload span{font-family:var(--f-display);font-size:1.4rem;color:var(--yellow);letter-spacing:.1em}
@@ -179,8 +183,8 @@
   .lightbox img{max-width:90vw;max-height:80vh;width:auto;height:auto;border-radius:6px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9);transform:scale(.92);transition:transform .5s cubic-bezier(.22,1,.36,1)}
   .lightbox.open img{transform:scale(1)}
   .lightbox__cap{margin-top:1.5rem;text-align:center}
-  .lightbox__cap span{display:block;color:var(--yellow);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:.4rem}
-  .lightbox__cap b{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;font-weight:400;color:var(--ink)}
+  .lightbox__cap span{display:block;color:#fff;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:.4rem}
+  .lightbox__cap b{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;font-weight:400;color:#fff}
   .lightbox__close{position:absolute;top:1.5rem;right:1.5rem;width:44px;height:44px;border:1px solid rgba(245,245,242,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:1.4rem;cursor:pointer;transition:background .3s,color .3s}
   .lightbox__close:hover{background:var(--yellow);color:var(--black)}
   .gallery.has-open{cursor:default}
@@ -319,6 +323,7 @@
     <div class="gactivate__btn">▶ Atidaryti galeriją</div>
   </div>
   <div class="gdone" id="gdone">Slinkite žemyn — toliau ↓</div>
+  <div class="g-neon-frame" id="gneon"></div>
   <div class="gload" id="gload"><span>Kraunama galerija…</span></div>
 </div>
 </div>
@@ -575,6 +580,8 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
   var activated=false;
   var actEl=document.getElementById('gactivate');
   var doneEl=document.getElementById('gdone');
+  var neonEl=document.getElementById('gneon');
+  var _nc=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
   // kol neaktyvuota: pin-wrap zemas (praslenki pro galerija). Aktyvavus: aukstas (tunelis veikia)
   function setActivated(on){
     activated=on;
@@ -698,28 +705,35 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
     }
 
     // kuri (originali) nuotrauka arciausia kameros
-    var best=0,bd=999;
-    for(var j=0;j<planes.length;j++){var m2=planes[j];if(!m2||!m2.visible)continue;var d=Math.abs(m2.userData.z0+curZ);if(d<bd){bd=d;best=m2.userData.srcIdx;}}
+    var best=0,bd=999,bestMesh=null;
+    for(var j=0;j<planes.length;j++){var m2=planes[j];if(!m2||!m2.visible)continue;var d=Math.abs(m2.userData.z0+curZ);if(d<bd){bd=d;best=m2.userData.srcIdx;bestMesh=m2;}}
     var gcurEl=document.getElementById('gcur');if(gcurEl)gcurEl.textContent=('0'+(best+1)).slice(-2);
     if(doneEl){if(targetZ>MAX_Z*0.95)doneEl.classList.add('show');else doneEl.classList.remove('show');}
-    var glabelEl=document.querySelector('.glabel');
-    if(bd<SPACING*0.45){
-      if(glabelEl)glabelEl.style.opacity='1';
-      if(ARNO_CAP&&ARNO_CAP[best]){
-        document.getElementById('glab-cat').textContent=ARNO_CAP[best][0];
-        document.getElementById('glab-name').textContent=ARNO_CAP[best][1];
-      }
-    }else{
-      if(glabelEl)glabelEl.style.opacity='0';
-    }
-
-    // PELE - svelnus parallax (ziuri is skirtingu kampu, bet lieki tunelyje)
+    // PELE - svelnus parallax
     camX+=(mouseX*1.1-camX)*0.05;
     camY+=(-mouseY*0.8-camY)*0.05;
     camera.position.x=camX;camera.position.y=camY;camera.position.z=4;
     camera.lookAt(camX*0.4,camY*0.4,-6);
 
     renderer.render(scene,camera);
+
+    // NEON FRAME – projektuojam plokštumos kampus i ekrano koordinates (po render)
+    if(neonEl&&activated&&bestMesh&&bd<SPACING*0.45){
+      var W2=2.8,H2=3.5;
+      _nc[0].set(-W2/2,-H2/2,0);_nc[1].set(W2/2,-H2/2,0);
+      _nc[2].set(W2/2,H2/2,0);_nc[3].set(-W2/2,H2/2,0);
+      var mnx=1,mxx=-1,mny=1,mxy=-1;
+      for(var nc=0;nc<4;nc++){
+        _nc[nc].applyMatrix4(bestMesh.matrixWorld).project(camera);
+        if(_nc[nc].x<mnx)mnx=_nc[nc].x;if(_nc[nc].x>mxx)mxx=_nc[nc].x;
+        if(_nc[nc].y<mny)mny=_nc[nc].y;if(_nc[nc].y>mxy)mxy=_nc[nc].y;
+      }
+      neonEl.style.left=((mnx+1)/2*innerWidth)+'px';
+      neonEl.style.top=((1-mxy)/2*innerHeight)+'px';
+      neonEl.style.width=((mxx-mnx)/2*innerWidth)+'px';
+      neonEl.style.height=((mxy-mny)/2*innerHeight)+'px';
+      neonEl.classList.add('show');
+    }else if(neonEl){neonEl.classList.remove('show');}
   }
   if(!reduced)animate();else renderer.render(scene,camera);
 
