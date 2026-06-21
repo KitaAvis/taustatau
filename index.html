@@ -578,6 +578,7 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
   // kol neaktyvuota: pin-wrap zemas (praslenki pro galerija). Aktyvavus: aukstas (tunelis veikia)
   function setActivated(on){
     activated=on;
+    pinWrap.style.height='100vh';
     if(on){
       var st=pinWrap.getBoundingClientRect().top+window.scrollY;
       window.scrollTo(0,st);
@@ -654,7 +655,7 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
     pointer.x=(clientX/innerWidth)*2-1;
     pointer.y=-(clientY/innerHeight)*2+1;
     raycaster.setFromCamera(pointer,camera);
-    var hits=raycaster.intersectObjects(planes.filter(Boolean));
+    var hits=raycaster.intersectObjects(planes.filter(function(m){return m&&m.visible&&m.material.opacity>0.1;}));
     if(hits.length){
       var m=hits[0].object;
       openLightbox(m.userData.idx);          // ant nuotraukos - atidaro
