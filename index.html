@@ -699,21 +699,18 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   addEventListener('keydown',function(e){if(e.key==='Escape'&&isOpen)closeLightbox();});
 
   function pickAt(clientX,clientY){
-    if(!gBestMesh){if(activated)setActivated(false);return;}
-    // projektuojam gBestMesh kampus i ekrano pikselius (ta pati logika kaip neon frame)
-    var W2=2.8,H2=3.5,pad=30;
-    var crnX=[],crnY=[];
-    var corners=[[-W2/2,-H2/2,0],[W2/2,-H2/2,0],[W2/2,H2/2,0],[-W2/2,H2/2,0]];
-    for(var c=0;c<4;c++){
-      _nc[c].set(corners[c][0],corners[c][1],corners[c][2]);
-      _nc[c].applyMatrix4(gBestMesh.matrixWorld).project(camera);
-      crnX.push((_nc[c].x+1)/2*innerWidth);
-      crnY.push((1-_nc[c].y)/2*innerHeight);
-    }
-    var pxMin=Math.min.apply(null,crnX)-pad,pxMax=Math.max.apply(null,crnX)+pad;
-    var pyMin=Math.min.apply(null,crnY)-pad,pyMax=Math.max.apply(null,crnY)+pad;
-    if(clientX>=pxMin&&clientX<=pxMax&&clientY>=pyMin&&clientY<=pyMax){
-      openLightbox(gBestMesh.userData.idx);
+    pointer.x=(clientX/innerWidth)*2-1;
+    pointer.y=-(clientY/innerHeight)*2+1;
+    raycaster.setFromCamera(pointer,camera);
+    // tik pries kamera esancios plokštumos (-SPACING..+5 world z)
+    var near=planes.filter(function(m){
+      if(!m||!m.visible||m.material.opacity<0.5)return false;
+      var wz=m.userData.z0+curZ;
+      return wz>-SPACING&&wz<5;
+    });
+    var hits=raycaster.intersectObjects(near);
+    if(hits.length){
+      openLightbox(hits[0].object.userData.idx);
     }else if(activated){
       setActivated(false);
     }
