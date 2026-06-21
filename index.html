@@ -183,8 +183,8 @@
   .lightbox img{max-width:90vw;max-height:80vh;width:auto;height:auto;border-radius:6px;box-shadow:0 40px 100px -30px rgba(0,0,0,.9);transform:scale(.92);transition:transform .5s cubic-bezier(.22,1,.36,1)}
   .lightbox.open img{transform:scale(1)}
   .lightbox__cap{margin-top:1.5rem;text-align:center}
-  .lightbox__cap span{display:block;color:#fff;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:.4rem}
-  .lightbox__cap b{font-family:var(--f-display);font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;font-weight:400;color:#fff}
+  .lightbox__cap span{display:block;color:#fff;font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
+  .lightbox__cap b{font-family:var(--f-display);font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#fff}
   .lightbox__close{position:absolute;top:1.5rem;right:1.5rem;width:44px;height:44px;border:1px solid rgba(245,245,242,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:1.4rem;cursor:pointer;transition:background .3s,color .3s}
   .lightbox__close:hover{background:var(--yellow);color:var(--black)}
   .gallery.has-open{cursor:default}
@@ -704,9 +704,9 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
       m.visible=op>0.01 && z<5;
     }
 
-    // kuri (originali) nuotrauka arciausia kameros
+    // kuri nuotrauka arčiausia ekrano CENTRO (2D projekcija)
     var best=0,bd=999,bestMesh=null;
-    for(var j=0;j<planes.length;j++){var m2=planes[j];if(!m2||!m2.visible)continue;var d=Math.abs(m2.userData.z0+curZ);if(d<bd){bd=d;best=m2.userData.srcIdx;bestMesh=m2;}}
+    for(var j=0;j<planes.length;j++){var m2=planes[j];if(!m2||!m2.visible)continue;_nc[0].set(Math.cos(m2.userData.ang)*TUNNEL_R,Math.sin(m2.userData.ang)*TUNNEL_R,m2.userData.z0+curZ);_nc[0].project(camera);var d=Math.sqrt(_nc[0].x*_nc[0].x+_nc[0].y*_nc[0].y);if(d<bd){bd=d;best=m2.userData.srcIdx;bestMesh=m2;}}
     var gcurEl=document.getElementById('gcur');if(gcurEl)gcurEl.textContent=('0'+(best+1)).slice(-2);
     if(doneEl){if(targetZ>MAX_Z*0.95)doneEl.classList.add('show');else doneEl.classList.remove('show');}
     // PELE - svelnus parallax
@@ -718,7 +718,7 @@ const ARNO_CAP=[['Darbai', 'Daikin širdis variu apjuosta'],['Darbai', 'Kai kati
     renderer.render(scene,camera);
 
     // NEON FRAME – projektuojam plokštumos kampus i ekrano koordinates (po render)
-    if(neonEl&&activated&&bestMesh&&bd<SPACING*0.45){
+    if(neonEl&&activated&&bestMesh&&bd<0.25){
       var W2=2.8,H2=3.5;
       _nc[0].set(-W2/2,-H2/2,0);_nc[1].set(W2/2,-H2/2,0);
       _nc[2].set(W2/2,H2/2,0);_nc[3].set(-W2/2,H2/2,0);
