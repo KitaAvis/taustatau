@@ -534,7 +534,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var REPEAT=1;
   var TOTAL=N;
   var SPACING=6.5;             // didesnis atstumas - nuotraukos neuzeina viena ant kitos
-  var TUNNEL_R=3.0;           // tunelio spindulys
+  var TUNNEL_R=2.2;           // tunelio spindulys (mazesnis = matoma portretiniame telefone)
   var planes=[];
   var loader=new THREE.TextureLoader();
   var loaded=0,texCache=[];
@@ -702,14 +702,10 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     pointer.x=(clientX/innerWidth)*2-1;
     pointer.y=-(clientY/innerHeight)*2+1;
     raycaster.setFromCamera(pointer,camera);
-    // tik pries kamera esancios plokštumos (-SPACING..+5 world z)
-    var near=planes.filter(function(m){
-      if(!m||!m.visible||m.material.opacity<0.5)return false;
-      var wz=m.userData.z0+curZ;
-      return wz>-SPACING&&wz<5;
-    });
-    var hits=raycaster.intersectObjects(near);
-    if(hits.length){
+    var vis=planes.filter(function(m){return m&&m.visible&&m.material.opacity>0.5;});
+    var hits=raycaster.intersectObjects(vis);
+    // pirmas smugis ir ne per toli (tunelio max gylis ~100)
+    if(hits.length&&hits[0].distance<100){
       openLightbox(hits[0].object.userData.idx);
     }else if(activated){
       setActivated(false);
@@ -728,10 +724,11 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   window.addEventListener('touchend',function(e){
     if(!activated||isOpen)return;
     if(!tHasMoved){
+      e.preventDefault(); // stabdo ghost click (sintetini click po touchend)
       var t=e.changedTouches[0];
       pickAt(t.clientX,t.clientY);
     }
-  },{passive:true});
+  },{passive:false});
 
   function animate(){
     requestAnimationFrame(animate);
