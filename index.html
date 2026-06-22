@@ -596,7 +596,9 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
       window.scrollTo(0,st);
       document.documentElement.style.overflow='hidden';
       document.body.style.overflow='hidden';
-      targetZ=0;curZ=0;
+      targetZ=INIT_Z;curZ=INIT_Z;
+      // kamera iš karto nukreipiama į pirmą nuotrauką (plane 0, angle=0)
+      var _d0=4-INIT_Z;camFollowX=TUNNEL_R*(10/_d0);camFollowY=0;
       if(actEl)actEl.classList.add('hidden');
     }else{
       document.documentElement.style.overflow='';
@@ -609,13 +611,14 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   if(actEl)actEl.addEventListener('click',function(){setActivated(true);});
   if(doneEl)doneEl.addEventListener('click',function(){setActivated(false);});
 
+  var INIT_Z=-2*SPACING;       // pradedame giliau - pirma nuotrauka matoma portrete
   var MAX_Z=(N-1)*SPACING;
   var touchLastY=0,tHasMoved=false;
   window.addEventListener('wheel',function(e){
     if(!activated)return;
     e.preventDefault();
     targetZ+=e.deltaY*0.06;
-    targetZ=Math.max(0,Math.min(targetZ,MAX_Z));
+    targetZ=Math.max(INIT_Z,Math.min(targetZ,MAX_Z));
   },{passive:false});
   window.addEventListener('touchstart',function(e){
     var t=e.touches[0];
@@ -632,7 +635,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     // bendras poslinkis nuo touchstart (ne delta): tikras scroll vs tapas
     if(Math.abs(t.clientY-tStartY)>20||Math.abs(t.clientX-tStartX)>20)tHasMoved=true;
     targetZ+=dy*0.12;
-    targetZ=Math.max(0,Math.min(targetZ,MAX_Z));
+    targetZ=Math.max(INIT_Z,Math.min(targetZ,MAX_Z));
   },{passive:false});
 
   addEventListener('scroll',function(){idleT=0;},{passive:true});
@@ -766,10 +769,10 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     camX+=(mouseX*1.1-camX)*0.05;
     camY+=(-mouseY*0.8-camY)*0.05;
     camera.position.x=camX;camera.position.y=camY;camera.position.z=4;
-    // kamera sklandžiai seka geriausią nuotrauką (visada prieš akis)
+    // kamera sklandžiai seka geriausią nuotrauką (tikslus centravimas per scale)
     if(gBestMesh){
-      camFollowX+=(gBestMesh.position.x-camFollowX)*0.05;
-      camFollowY+=(gBestMesh.position.y-camFollowY)*0.05;
+      var _dp=4-gBestMesh.position.z;
+      if(_dp>1){var _sc=Math.min(10/_dp,4);camFollowX+=(gBestMesh.position.x*_sc-camFollowX)*0.05;camFollowY+=(gBestMesh.position.y*_sc-camFollowY)*0.05;}
     }
     camera.lookAt(camFollowX+camX*0.4,camFollowY+camY*0.4,-6);
 
