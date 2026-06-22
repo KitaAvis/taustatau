@@ -533,7 +533,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var N=ARNO.length;
   var REPEAT=1;
   var TOTAL=N;
-  var SPACING=6.5;             // didesnis atstumas - nuotraukos neuzeina viena ant kitos
+  var SPACING=8.0;             // didesnis atstumas - kiekviena nuotrauka turi laika centre
   var TUNNEL_R=2.2;           // tunelio spindulys (mazesnis = matoma portretiniame telefone)
   var planes=[];
   var loader=new THREE.TextureLoader();
@@ -563,7 +563,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
       var mat=new THREE.MeshBasicMaterial({map:texCache[srcIdx]||null,transparent:true,opacity:texCache[srcIdx]?1:0,side:THREE.DoubleSide});
       var mesh=new THREE.Mesh(geo,mat);
       // TUNELIS: kiekviena nuotrauka aplink a\u0161\u012f skirtingu kampu, slenkant gilyn
-      var ang=(i/TOTAL)*Math.PI*2*REPEAT + i*1.3;   // didesnis kampu zingsnis - gretimos issiskaido
+      var ang=(i/TOTAL)*Math.PI*2;   // tolygus 30° žingsnis - kiekviena nuotrauka aiškiai praslenka
       mesh.userData.ang=ang;
       mesh.userData.srcIdx=srcIdx;
       mesh.userData.z0=-i*SPACING;
@@ -617,7 +617,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   window.addEventListener('wheel',function(e){
     if(!activated)return;
     e.preventDefault();
-    targetZ+=e.deltaY*0.06;
+    targetZ+=e.deltaY*0.05;
     targetZ=Math.max(INIT_Z,Math.min(targetZ,MAX_Z));
   },{passive:false});
   window.addEventListener('touchstart',function(e){
@@ -634,7 +634,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     touchLastY=t.clientY;
     // bendras poslinkis nuo touchstart (ne delta): tikras scroll vs tapas
     if(Math.abs(t.clientY-tStartY)>20||Math.abs(t.clientX-tStartX)>20)tHasMoved=true;
-    targetZ+=dy*0.12;
+    targetZ+=dy*0.10;
     targetZ=Math.max(INIT_Z,Math.min(targetZ,MAX_Z));
   },{passive:false});
 
