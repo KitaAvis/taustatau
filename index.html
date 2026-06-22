@@ -613,10 +613,11 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
 
   var INIT_Z=-2*SPACING;       // pradedame giliau - pirma nuotrauka matoma portrete
   var MAX_Z=(N-1)*SPACING;
-  var touchLastY=0,tHasMoved=false;
+  var touchLastY=0,tHasMoved=false,lastScrollT=0;
   window.addEventListener('wheel',function(e){
     if(!activated)return;
     e.preventDefault();
+    lastScrollT=Date.now();
     targetZ+=e.deltaY*0.05;
     targetZ=Math.max(INIT_Z,Math.min(targetZ,MAX_Z));
   },{passive:false});
@@ -634,6 +635,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     touchLastY=t.clientY;
     // bendras poslinkis nuo touchstart (ne delta): tikras scroll vs tapas
     if(Math.abs(t.clientY-tStartY)>20||Math.abs(t.clientX-tStartX)>20)tHasMoved=true;
+    lastScrollT=Date.now();
     targetZ+=dy*0.10;
     targetZ=Math.max(INIT_Z,Math.min(targetZ,MAX_Z));
   },{passive:false});
@@ -738,8 +740,13 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     requestAnimationFrame(animate);
     if(isOpen){renderer.render(scene,camera);return;}  // lightbox - erdve sustabdyta
 
-    // INERCIJA: targetZ valdo wheel/touch, curZ seka su inercija
-    curZ+=(targetZ-curZ)*0.075;
+    // LUXURY SNAP: po 450ms nuo paskutinio scroll - traukia į artimiausią nuotrauką
+    if(activated&&Date.now()-lastScrollT>450){
+      var _sn=Math.round((targetZ-INIT_Z)/SPACING)*SPACING+INIT_Z;
+      targetZ+=(_sn-targetZ)*0.045;
+    }
+    // INERCIJA: sklandesnė (0.06) - luxury liquid feel
+    curZ+=(targetZ-curZ)*0.06;
 
     // TUNELIS: nuotraukos aplink asi, atsuktos i centra, slenka pro kamera
     for(var i=0;i<planes.length;i++){
@@ -774,6 +781,9 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
       var _dp=4-gBestMesh.position.z;
       if(_dp>1){var _sc=Math.min(10/_dp,4);camFollowX+=(gBestMesh.position.x*_sc-camFollowX)*0.05;camFollowY+=(gBestMesh.position.y*_sc-camFollowY)*0.05;}
     }
+    // kai grįžtama į pradžią - kamera sklandžiai grįžta prie pirmos nuotraukos
+    var _startRatio=Math.max(0,1-(curZ-INIT_Z)/SPACING);
+    if(_startRatio>0){var _d0=4-INIT_Z;camFollowX+=((TUNNEL_R*(10/_d0))-camFollowX)*_startRatio*0.08;camFollowY+=(0-camFollowY)*_startRatio*0.08;}
     camera.lookAt(camFollowX+camX*0.4,camFollowY+camY*0.4,-6);
 
     renderer.render(scene,camera);
