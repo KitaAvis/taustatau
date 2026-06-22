@@ -175,6 +175,7 @@
   .ghint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);z-index:6;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
   .gload{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:var(--black);transition:opacity .6s}
   .gload.gone{opacity:0;pointer-events:none}
+  .g-vignette{position:absolute;bottom:0;left:0;right:0;height:38%;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.1) 70%,transparent 100%);pointer-events:none;z-index:5}
   .gload span{font-family:var(--f-display);font-size:1.4rem;color:var(--yellow);letter-spacing:.1em}
   /* LIGHTBOX - nuotrauka atsidaro pilnai */
   .lightbox{position:fixed;inset:0;z-index:50;background:rgba(6,6,6,.94);display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;visibility:hidden;transition:opacity .5s,visibility .5s;cursor:zoom-out;padding:4vh 4vw}
@@ -316,6 +317,7 @@
 <div class="gallery">
   <canvas id="gcanvas"></canvas>
   <div class="gcount"><b id="gcur">01</b> / <span id="gtot">06</span></div>
+  <div class="g-vignette"></div>
   <div class="glabel" id="glabel"><div class="glabel__line"></div><span id="glab-cat"></span><b id="glab-name"></b></div>
   <div class="ghint">Slinkite pro tunelį · spustelėkite nuotrauką</div>
     <div class="gactivate" id="gactivate">
@@ -591,17 +593,19 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var glabCatEl=document.getElementById('glab-cat');
   var glabNameEl=document.getElementById('glab-name');
   var gTitleIdx=-1,gTitleTimer=null;
+  var gPrevCurZ=0,gWasBack=false; // slinkimo krypties sekimas
   function showGTitle(idx){
     if(idx===gTitleIdx)return;
     clearTimeout(gTitleTimer);
     if(glabelEl)glabelEl.classList.remove('show');
     gTitleIdx=idx;
     if(idx<0||!ARNO_CAP||!ARNO_CAP[idx])return;
+    // trumpesnis delay - tekstas jau paruoštas CSS animacijai
     gTitleTimer=setTimeout(function(){
       if(glabCatEl)glabCatEl.textContent=ARNO_CAP[idx][0];
       if(glabNameEl)glabNameEl.textContent=ARNO_CAP[idx][1];
       if(glabelEl)glabelEl.classList.add('show');
-    },200);
+    },120);
   }
   var _nc=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
   var gBestMesh=null;
@@ -792,8 +796,14 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     for(var j=0;j<planes.length;j++){var m2=planes[j];if(!m2||!m2.visible)continue;_nc[0].set(Math.cos(m2.userData.ang)*TUNNEL_R,Math.sin(m2.userData.ang)*TUNNEL_R,m2.userData.z0+curZ);_nc[0].project(camera);var d=Math.sqrt(_nc[0].x*_nc[0].x+_nc[0].y*_nc[0].y);if(d<bd){bd=d;best=m2.userData.srcIdx;gBestMesh=m2;}}
     var gcurEl=document.getElementById('gcur');if(gcurEl)gcurEl.textContent=('0'+(best+1)).slice(-2);
     if(doneEl){if(targetZ>MAX_Z*0.95)doneEl.classList.add('show');else doneEl.classList.remove('show');}
-    // premium pavadinimas: rodyti kai nuotrauka ekrano centre
-    if(activated&&gBestMesh&&bd<0.38)showGTitle(gBestMesh.userData.srcIdx);else showGTitle(-1);
+    // krypties sekimas: atgal = paslepiame, į priekį = galima rodyti
+    var _dz=curZ-gPrevCurZ;
+    if(_dz<-0.02)gWasBack=true;        // slenkama atgal - blokuojame
+    if(_dz>0.07)gWasBack=false;        // slenkama į priekį - leidžiame
+    gPrevCurZ=curZ;
+    // pavadinimas TIK einant į priekį ir nuotrauka centre
+    if(activated&&gBestMesh&&bd<0.32&&!gWasBack)showGTitle(gBestMesh.userData.srcIdx);
+    else showGTitle(-1);
     // PELE - svelnus parallax
     camX+=(mouseX*1.1-camX)*0.05;
     camY+=(-mouseY*0.8-camY)*0.05;
