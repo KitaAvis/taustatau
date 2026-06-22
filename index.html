@@ -586,6 +586,7 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var neonEl=document.getElementById('gneon');
   var _nc=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
   var gBestMesh=null;
+  var camFollowX=0,camFollowY=0; // kamera sklandžiai seka geriausią nuotrauką
   // kol neaktyvuota: pin-wrap zemas (praslenki pro galerija). Aktyvavus: aukstas (tunelis veikia)
   function setActivated(on){
     activated=on;
@@ -765,7 +766,12 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     camX+=(mouseX*1.1-camX)*0.05;
     camY+=(-mouseY*0.8-camY)*0.05;
     camera.position.x=camX;camera.position.y=camY;camera.position.z=4;
-    camera.lookAt(camX*0.4,camY*0.4,-6);
+    // kamera sklandžiai seka geriausią nuotrauką (visada prieš akis)
+    if(gBestMesh){
+      camFollowX+=(gBestMesh.position.x-camFollowX)*0.05;
+      camFollowY+=(gBestMesh.position.y-camFollowY)*0.05;
+    }
+    camera.lookAt(camFollowX+camX*0.4,camFollowY+camY*0.4,-6);
 
     renderer.render(scene,camera);
 
