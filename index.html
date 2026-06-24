@@ -603,23 +603,14 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     },150);
   }
 
-  var galleryEl=document.querySelector('.gallery');
   function setActivated(on){
     activated=on;controls.enabled=on;
     if(on){
       controls.update();
-      if(galleryEl){galleryEl.style.position='fixed';galleryEl.style.inset='0';galleryEl.style.zIndex='90';galleryEl.style.height='100vh';}
-      document.documentElement.style.overflow='hidden';
-      document.body.style.overflow='hidden';
-      renderer.setSize(innerWidth,innerHeight);
-      camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
       if(actEl)actEl.classList.add('hidden');
       if(doneEl)doneEl.classList.add('show');
       if(ghintEl)ghintEl.style.opacity='1';
     }else{
-      if(galleryEl){galleryEl.style.position='';galleryEl.style.inset='';galleryEl.style.zIndex='';galleryEl.style.height='';}
-      document.documentElement.style.overflow='';
-      document.body.style.overflow='';
       ambAngle=Math.atan2(camera.position.x,camera.position.z);
       if(actEl)actEl.classList.remove('hidden');
       if(doneEl)doneEl.classList.remove('show');
