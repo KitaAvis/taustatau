@@ -628,8 +628,8 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     }
   }
   setActivated(false);
-  if(actEl)actEl.addEventListener('click',function(){setActivated(true);});
-  if(doneEl)doneEl.addEventListener('click',function(){setActivated(false);});
+  if(actEl)actEl.addEventListener('click',function(e){e.stopPropagation();setActivated(true);});
+  if(doneEl)doneEl.addEventListener('click',function(e){e.stopPropagation();setActivated(false);});
 
   // Lightbox
   var lightbox=document.getElementById('lightbox');
@@ -651,31 +651,26 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var lbc=document.getElementById('lbclose');if(lbc)lbc.addEventListener('click',function(e){e.stopPropagation();closeLightbox();});
   addEventListener('keydown',function(e){if(e.key==='Escape'&&isOpen)closeLightbox();});
 
-  // Raycaster
+  // Raycaster + click detection (apdorojama animate() viduje, po renderer.render())
   var raycaster=new THREE.Raycaster();
   var pointer=new THREE.Vector2();
-  var _lastPick=0;
-  function pickAt(cx,cy){
-    var now=Date.now();if(now-_lastPick<200)return;_lastPick=now;
-    camera.updateMatrixWorld();
-    scene.updateMatrixWorld(true);
-    pointer.x=(cx/innerWidth)*2-1;pointer.y=-(cy/innerHeight)*2+1;
-    raycaster.setFromCamera(pointer,camera);
-    var hits=raycaster.intersectObjects(cards);
-    if(hits.length)openLightbox(hits[0].object.userData.idx);
+  var pendingPick=null;
+
+  function schedulePick(cx,cy){
+    if(!activated||isOpen)return;
+    pendingPick={x:cx,y:cy};
   }
-  // click event (fires after mouseup without drag – neperima OrbitControls)
-  canvas.addEventListener('click',function(e){
-    if(isOpen||!activated)return;
-    pickAt(e.clientX,e.clientY);
-  });
-  // pointerup fallback su didesniu toleransu
-  var _dn={x:0,y:0};
-  canvas.addEventListener('pointerdown',function(e){_dn.x=e.clientX;_dn.y=e.clientY;});
+
+  // Desktop: stebime drag – tik tikras klikas (be traskinimo) atidaro nuotrauką
+  var _dn={x:0,y:0},_drag=false;
+  canvas.addEventListener('pointerdown',function(e){if(e.pointerType==='touch')return;_dn.x=e.clientX;_dn.y=e.clientY;_drag=false;});
+  canvas.addEventListener('pointermove',function(e){if(e.pointerType==='touch')return;if(Math.abs(e.clientX-_dn.x)+Math.abs(e.clientY-_dn.y)>10)_drag=true;});
   canvas.addEventListener('pointerup',function(e){
-    if(e.pointerType==='touch'||isOpen||!activated)return;
-    if(Math.abs(e.clientX-_dn.x)+Math.abs(e.clientY-_dn.y)<14)pickAt(e.clientX,e.clientY);
+    if(e.pointerType==='touch'||isOpen||!activated||_drag)return;
+    schedulePick(e.clientX,e.clientY);
   });
+
+  // Hover
   canvas.addEventListener('mousemove',function(e){
     if(!activated||isOpen)return;
     camera.updateMatrixWorld();
@@ -687,13 +682,15 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
     canvas.style.cursor=ho?'pointer':'';
     showGTitle(ho?ho.userData.idx:-1);
   });
+
+  // Touch
   var tHasMoved=false,tSX=0,tSY=0;
   window.addEventListener('touchstart',function(e){tSX=e.touches[0].clientX;tSY=e.touches[0].clientY;tHasMoved=false;},{passive:true});
   window.addEventListener('touchmove',function(e){if(Math.abs(e.touches[0].clientX-tSX)>15||Math.abs(e.touches[0].clientY-tSY)>15)tHasMoved=true;},{passive:true});
   window.addEventListener('touchend',function(e){
     if(!activated||isOpen||tHasMoved)return;
     e.preventDefault();
-    var t=e.changedTouches[0];pickAt(t.clientX,t.clientY);
+    var t=e.changedTouches[0];schedulePick(t.clientX,t.clientY);
   },{passive:false});
 
   // Animacija
@@ -717,6 +714,14 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
       c.scale.y+=(ts-c.scale.y)*.12;
     }
     renderer.render(scene,camera);
+    // Po render() visos matricos atnaujintos – dabar raycasting tikslus
+    if(pendingPick&&activated&&!isOpen){
+      var pp=pendingPick;pendingPick=null;
+      pointer.x=(pp.x/innerWidth)*2-1;pointer.y=-(pp.y/innerHeight)*2+1;
+      raycaster.setFromCamera(pointer,camera);
+      var ph=raycaster.intersectObjects(cards);
+      if(ph.length)openLightbox(ph[0].object.userData.idx);
+    }
   }
   if(!reduced)animate();else renderer.render(scene,camera);
 
