@@ -232,8 +232,9 @@
   .gactivate.hidden{opacity:0;pointer-events:none}
   .gactivate__btn{font-family:var(--f-display);font-size:clamp(1.2rem,3vw,1.8rem);text-transform:uppercase;color:var(--black);background:var(--yellow);padding:1rem 2.2rem;border-radius:3px;letter-spacing:.02em;display:flex;align-items:center;gap:.6rem}
   .gactivate__hint{margin-top:1.2rem;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
-  .gdone{position:fixed;top:5rem;right:1.4rem;z-index:150;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);border:1px solid var(--line-y);padding:.5rem 1rem;border-radius:2px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s;background:rgba(8,8,8,.75);backdrop-filter:blur(6px)}
+  .gdone{position:fixed;top:4.8rem;right:1.2rem;z-index:99;font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:rgba(245,197,24,.75);border:1px solid rgba(245,197,24,.22);padding:.38rem .85rem;border-radius:2rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .35s,color .2s,border-color .2s;background:rgba(6,6,6,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);user-select:none}
   .gdone.show{opacity:1;pointer-events:auto}
+  .gdone:hover{color:var(--yellow);border-color:rgba(245,197,24,.55)}
 </style>
 </head>
 <body>
@@ -276,13 +277,6 @@
 <div class="space"></div>
 
 <main class="after">
-  <div class="strip">
-    <div class="strip-t">
-      <span>Šilumos siurbliai /</span><span>Kondicionieriai /</span><span>Vėdinimas /</span><span>Rekuperacija /</span><span>Santechnika /</span>
-      <span>Šilumos siurbliai /</span><span>Kondicionieriai /</span><span>Vėdinimas /</span><span>Rekuperacija /</span><span>Santechnika /</span>
-    </div>
-  </div>
-
   <section class="sec" id="paslaugos">
     <div class="wrap">
       <div class="svc-head">
@@ -583,6 +577,8 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   var activated=false;
   var actEl=document.getElementById('gactivate');
   var doneEl=document.getElementById('gdone');
+  // Perkeliame į <body> – root stacking context, z-index:99 veikia tiksliai
+  if(doneEl)document.body.appendChild(doneEl);
   var ghintEl=document.getElementById('ghint');
   var glabelEl=document.getElementById('glabel');
   var glabCatEl=document.getElementById('glab-cat');
@@ -620,7 +616,10 @@ const ARNO_CAP=[['','Daikin širdis variu apjuosta'],['','Kai katilinėje daugia
   }
   setActivated(false);
   if(actEl)actEl.addEventListener('click',function(e){e.stopPropagation();setActivated(true);});
-  if(doneEl)doneEl.addEventListener('click',function(e){e.stopPropagation();setActivated(false);});
+  if(doneEl){
+    doneEl.addEventListener('click',function(e){e.stopPropagation();setActivated(false);});
+    doneEl.addEventListener('touchend',function(e){e.preventDefault();e.stopPropagation();setActivated(false);});
+  }
 
   // Lightbox
   var lightbox=document.getElementById('lightbox');
